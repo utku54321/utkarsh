@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Finance Modelling</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wrap">
+        <h1>Finance Modelling</h1>
+        <nav>
+          <a href="{{ url_for('index') }}">Home</a>
+          <a href="{{ url_for('statements.view') }}">Statements</a>
+          <a href="{{ url_for('analysis.view') }}">Analysis</a>
+          <a href="{{ url_for('valuation.view') }}">Valuation</a>
+          <a href="{{ url_for('sports.view') }}">Live Football</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="footer">
+      <div class="wrap">
+        <p>© 2025 Finance Modelling • Built with Flask</p>
+      </div>
+    </footer>
+  </body>
+</html>

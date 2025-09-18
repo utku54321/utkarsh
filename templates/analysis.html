@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Financial Statement Analysis</h2>
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+  {% if ratios %}
+    <section class="card">
+      <h3>Margins &amp; Returns</h3>
+      <pre>{{ ratios | tojson(indent=2) }}</pre>
+    </section>
+    <section class="card">
+      <h3>Common Size</h3>
+      <h4>Income Statement (% of Revenue)</h4>
+      <div class="tablewrap">{{ common_size.income_statement.to_html(index=False) | safe }}</div>
+      <h4>Balance Sheet (% of Assets)</h4>
+      <div class="tablewrap">{{ common_size.balance_sheet.to_html(index=False) | safe }}</div>
+    </section>
+    <section class="card">
+      <h3>DuPont ROE</h3>
+      <pre>{{ dupont | tojson(indent=2) }}</pre>
+    </section>
+    <section class="card">
+      <h3>Growth (YoY)</h3>
+      <pre>{{ growth | tojson(indent=2) }}</pre>
+    </section>
+  {% else %}
+    <p>Run Fetch then Statements first.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Standardized Statements</h2>
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+  {% if result %}
+    <div class="row">
+      <a class="btn" href="{{ url_for('statements.export', ticker=ticker, path=folder_path) }}">Download XLSX</a>
+    </div>
+    <h3>Income Statement</h3>
+    <div class="tablewrap">{{ result.income_statement.to_html(index=False) | safe }}</div>
+    <h3>Balance Sheet</h3>
+    <div class="tablewrap">{{ result.balance_sheet.to_html(index=False) | safe }}</div>
+    <h3>Cash Flow</h3>
+    <div class="tablewrap">{{ result.cash_flow.to_html(index=False) | safe }}</div>
+  {% else %}
+    <p>Go to Home → run the Fetch step, then open Statements.</p>
+  {% endif %}
+{% endblock %}
