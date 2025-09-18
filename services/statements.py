@@ -1,5 +1,8 @@
 import os
 import glob
+from dataclasses import dataclass, field
+from typing import List, Optional
+
 import pandas as pd
 
 KEY_MAP = {
@@ -22,6 +25,32 @@ KEY_MAP = {
     'Capex': ['Capital Expenditure', 'Capital Expenditures'],
     'Depreciation': ['Depreciation', 'Reconciled Depreciation'],
 }
+
+
+class StatementDataUnavailable(Exception):
+    """Raised when standardized statements cannot be produced."""
+
+
+@dataclass
+class StandardizedStatements:
+    income_statement: Optional[pd.DataFrame] = None
+    balance_sheet: Optional[pd.DataFrame] = None
+    cash_flow: Optional[pd.DataFrame] = None
+    periods: List[str] = field(default_factory=list)
+    error: Optional[str] = None
+
+    @classmethod
+    def from_error(cls, message: str) -> 'StandardizedStatements':
+        return cls(error=message)
+
+    def ensure_ok(self) -> 'StandardizedStatements':
+        if self.error:
+            raise StatementDataUnavailable(self.error)
+        return self
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None
 
 
 def find_file(folder_path: str, pattern: str):
@@ -61,7 +90,7 @@ def _pick(df: pd.DataFrame, canonical: str):
     return None
 
 
-def standardize_statements(ticker: str = '', folder_path: str = '', data_dir: str = './data'):
+def standardize_statements(ticker: str = '', folder_path: str = '', data_dir: str = './data') -> StandardizedStatements:
     if not folder_path and ticker:
         is_p, bs_p, cf_p = load_latest_csv(data_dir, ticker.upper())
     else:
@@ -70,7 +99,9 @@ def standardize_statements(ticker: str = '', folder_path: str = '', data_dir: st
         cf_p = os.path.join(folder_path, 'cash_flow.csv') if folder_path else None
 
     if not all([is_p, bs_p, cf_p]):
-        return {'error': 'Could not locate statements. Run /data/fetch first or provide a valid folder.'}
+        return StandardizedStatements.from_error(
+            'Could not locate statements. Run /data/fetch first or provide a valid folder.'
+        )
 
     is_df = pd.read_csv(is_p)
     bs_df = pd.read_csv(bs_p)
@@ -111,13 +142,19 @@ def standardize_statements(ticker: str = '', folder_path: str = '', data_dir: st
                 if per in std_cf.columns:
                     std_cf.loc[std_cf['Item'] == item, per] = val
 
-    return {'income_statement': std_is, 'balance_sheet': std_bs, 'cash_flow': std_cf, 'periods': periods}
+    return StandardizedStatements(
+        income_statement=std_is,
+        balance_sheet=std_bs,
+        cash_flow=std_cf,
+        periods=periods,
+    )
 
 
-def export_statements_xlsx(std: dict, ticker: str, out_dir: str = './data'):
+def export_statements_xlsx(std: StandardizedStatements, ticker: str, out_dir: str = './data'):
+    std = std.ensure_ok()
     path = os.path.join(out_dir, f'{ticker}_statements.xlsx')
     with pd.ExcelWriter(path, engine='xlsxwriter') as writer:
-        std['income_statement'].to_excel(writer, sheet_name='IncomeStatement', index=False)
-        std['balance_sheet'].to_excel(writer, sheet_name='BalanceSheet', index=False)
-        std['cash_flow'].to_excel(writer, sheet_name='CashFlow', index=False)
+        std.income_statement.to_excel(writer, sheet_name='IncomeStatement', index=False)
+        std.balance_sheet.to_excel(writer, sheet_name='BalanceSheet', index=False)
+        std.cash_flow.to_excel(writer, sheet_name='CashFlow', index=False)
     return path

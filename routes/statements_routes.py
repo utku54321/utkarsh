@@ -13,6 +13,8 @@ def view():
         return render_template('statements.html', error='Provide ticker or path from fetch step.')
 
     std = standardize_statements(ticker=ticker, folder_path=path, data_dir=current_app.config['DATA_DIR'])
+    if std.error:
+        return render_template('statements.html', error=std.error, ticker=ticker, folder_path=path)
     return render_template('statements.html', result=std, ticker=ticker, folder_path=path)
 
 
@@ -21,5 +23,8 @@ def export():
     ticker = (request.args.get('ticker') or '').upper().strip()
     path = request.args.get('path')
     std = standardize_statements(ticker=ticker, folder_path=path, data_dir=current_app.config['DATA_DIR'])
+    if std.error:
+        return render_template('statements.html', error=std.error, ticker=ticker, folder_path=path)
+
     out_path = export_statements_xlsx(std, ticker=ticker or 'COMPANY', out_dir=current_app.config['DATA_DIR'])
     return send_file(out_path, as_attachment=True)

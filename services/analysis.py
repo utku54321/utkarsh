@@ -1,5 +1,8 @@
+from typing import Optional
+
 import pandas as pd
-from .statements import standardize_statements
+
+from .statements import StandardizedStatements, standardize_statements
 
 
 def _to_series(df: pd.DataFrame, name: str) -> pd.Series:
@@ -9,9 +12,18 @@ def _to_series(df: pd.DataFrame, name: str) -> pd.Series:
     return pd.to_numeric(series, errors='coerce')
 
 
-def compute_ratios(ticker: str = '', folder_path: str = '', data_dir: str = './data'):
-    std = standardize_statements(ticker, folder_path, data_dir)
-    is_df, bs_df, cf_df = std['income_statement'], std['balance_sheet'], std['cash_flow']
+def _resolve_std(
+    std: Optional[StandardizedStatements], ticker: str, folder_path: str, data_dir: str
+) -> StandardizedStatements:
+    base = std or standardize_statements(ticker, folder_path, data_dir)
+    return base.ensure_ok()
+
+
+def compute_ratios(
+    ticker: str = '', folder_path: str = '', data_dir: str = './data', std: Optional[StandardizedStatements] = None
+):
+    std = _resolve_std(std, ticker, folder_path, data_dir)
+    is_df, bs_df, cf_df = std.income_statement, std.balance_sheet, std.cash_flow
     out = {}
 
     rev = _to_series(is_df, 'Total Revenue')
@@ -42,9 +54,11 @@ def compute_ratios(ticker: str = '', folder_path: str = '', data_dir: str = './d
     return out
 
 
-def common_size(ticker: str = '', folder_path: str = '', data_dir: str = './data'):
-    std = standardize_statements(ticker, folder_path, data_dir)
-    is_df, bs_df = std['income_statement'].copy(), std['balance_sheet'].copy()
+def common_size(
+    ticker: str = '', folder_path: str = '', data_dir: str = './data', std: Optional[StandardizedStatements] = None
+):
+    std = _resolve_std(std, ticker, folder_path, data_dir)
+    is_df, bs_df = std.income_statement.copy(), std.balance_sheet.copy()
 
     rev = pd.to_numeric(is_df[is_df['Item'] == 'Total Revenue'].iloc[0].drop('Item'), errors='coerce')
     cs_is = is_df.set_index('Item')
@@ -61,9 +75,11 @@ def common_size(ticker: str = '', folder_path: str = '', data_dir: str = './data
     return {'income_statement': cs_is, 'balance_sheet': cs_bs}
 
 
-def dupont_breakdown(ticker: str = '', folder_path: str = '', data_dir: str = './data'):
-    std = standardize_statements(ticker, folder_path, data_dir)
-    is_df, bs_df = std['income_statement'], std['balance_sheet']
+def dupont_breakdown(
+    ticker: str = '', folder_path: str = '', data_dir: str = './data', std: Optional[StandardizedStatements] = None
+):
+    std = _resolve_std(std, ticker, folder_path, data_dir)
+    is_df, bs_df = std.income_statement, std.balance_sheet
 
     ni = pd.to_numeric(is_df[is_df['Item'] == 'Net Income'].iloc[0].drop('Item'), errors='coerce')
     rev = pd.to_numeric(is_df[is_df['Item'] == 'Total Revenue'].iloc[0].drop('Item'), errors='coerce')
@@ -83,9 +99,11 @@ def dupont_breakdown(ticker: str = '', folder_path: str = '', data_dir: str = '.
     }
 
 
-def growth_table(ticker: str = '', folder_path: str = '', data_dir: str = './data'):
-    std = standardize_statements(ticker, folder_path, data_dir)
-    is_df, bs_df = std['income_statement'], std['balance_sheet']
+def growth_table(
+    ticker: str = '', folder_path: str = '', data_dir: str = './data', std: Optional[StandardizedStatements] = None
+):
+    std = _resolve_std(std, ticker, folder_path, data_dir)
+    is_df, bs_df = std.income_statement, std.balance_sheet
 
     def yoy(series):
         s = pd.to_numeric(series, errors='coerce')
