@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Step-by-Step Pipeline</h2>
+  <ol class="steps">
+    <li><strong>1) Ingestion:</strong> Enter ticker + dates and pull data from Yahoo. Or upload your XLSX.</li>
+    <li><strong>2) Statements:</strong> Standardized IS/BS/CF + download as XLSX.</li>
+    <li><strong>3) Analysis:</strong> Ratios, common-size, DuPont, growth.</li>
+    <li><strong>4) Valuation:</strong> Quick DCF & comparables + export workbook.</li>
+    <li><strong>5) One-Pager:</strong> Use key numbers to craft a concise dashboard.</li>
+  </ol>
+
+  <section class="card">
+    <h3>Fetch from Yahoo Finance</h3>
+    <label>Ticker <input id="yf_ticker" placeholder="e.g., TCS.NS or AAPL" /></label>
+    <div class="row">
+      <label>Start <input type="date" id="yf_start"></label>
+      <label>End <input type="date" id="yf_end"></label>
+      <label>Interval
+        <select id="yf_interval">
+          <option value="1d">1d</option>
+          <option value="1wk">1wk</option>
+          <option value="1mo">1mo</option>
+        </select>
+      </label>
+    </div>
+    <button onclick="fetchYF()">Download</button>
+    <pre id="yf_result"></pre>
+  </section>
+
+  <section class="card">
+    <h3>Upload Your XLSX (IncomeStatement / BalanceSheet / CashFlow sheets)</h3>
+    <input type="file" id="upload_file">
+    <button onclick="uploadXLSX()">Upload</button>
+    <pre id="upload_result"></pre>
+  </section>
+{% endblock %}
