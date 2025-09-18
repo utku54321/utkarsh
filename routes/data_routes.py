@@ -67,6 +67,38 @@ def upload():
 @bp.route('/download', methods=['GET'])
 def download():
     path = request.args.get('path')
-    if not path or not os.path.exists(path):
+    if not path:
         return jsonify({'ok': False, 'error': 'file not found'}), 404
-    return send_file(path, as_attachment=True)
+
+    data_dir = os.path.realpath(current_app.config['DATA_DIR'])
+    upload_dir = os.path.realpath(current_app.config['UPLOAD_DIR'])
+    allowed_roots = [data_dir, upload_dir]
+
+    def _is_allowed(resolved_path: str) -> bool:
+        for root in allowed_roots:
+            try:
+                common = os.path.commonpath([resolved_path, root])
+            except ValueError:
+                # Occurs on Windows when drives differ.
+                continue
+            if common == root:
+                return True
+        return False
+
+    candidates = [path] if os.path.isabs(path) else [
+        os.path.join(data_dir, path),
+        os.path.join(upload_dir, path),
+    ]
+
+    for candidate in candidates:
+        resolved = os.path.realpath(candidate)
+
+        if not _is_allowed(resolved):
+            return jsonify({'ok': False, 'error': 'access denied'}), 403
+
+        if not os.path.exists(resolved):
+            continue
+
+        return send_file(resolved, as_attachment=True)
+
+    return jsonify({'ok': False, 'error': 'file not found'}), 404
