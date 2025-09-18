@@ -2,7 +2,8 @@ import math
 import os
 import pandas as pd
 import yfinance as yf
-from .statements import standardize_statements
+
+from .statements import StandardizedStatements, standardize_statements
 
 
 def _latest_value(df: pd.DataFrame, item: str):
@@ -15,9 +16,11 @@ def _latest_value(df: pd.DataFrame, item: str):
     return float(series.iloc[0])
 
 
-def simple_dcf(ticker: str, wacc: float, terminal_growth: float, forecast_years: int = 5, data_dir: str = './data'):
-    std = standardize_statements(ticker=ticker, data_dir=data_dir)
-    is_df, cf_df, bs_df = std['income_statement'], std['cash_flow'], std['balance_sheet']
+def simple_dcf(
+    ticker: str, wacc: float, terminal_growth: float, forecast_years: int = 5, data_dir: str = './data'
+):
+    std: StandardizedStatements = standardize_statements(ticker=ticker, data_dir=data_dir).ensure_ok()
+    is_df, cf_df, bs_df = std.income_statement, std.cash_flow, std.balance_sheet
 
     cfo = _latest_value(cf_df, 'CFO')
     capex = _latest_value(cf_df, 'Capex')
